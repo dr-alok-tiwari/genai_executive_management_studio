@@ -19,6 +19,10 @@ except ImportError:
     HAS_DOCX = False
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Anchor all paths to the script's directory so the app runs correctly
+# regardless of which directory Streamlit is launched from.
+BASE_DIR = Path(__file__).resolve().parent
+
 APP_TITLE    = "GenAI Executive Management Studio"
 APP_SUBTITLE = "A Hands-On Learning Portal for Management Professionals"
 FOOTER_TEXT  = "© 2025–2026 Dr. Alok Tiwari · Goa Institute of Management · For classroom use only"
@@ -29,7 +33,7 @@ st.set_page_config(
     layout="wide", initial_sidebar_state="expanded",
 )
 
-_CSS = Path("assets/style.css")
+_CSS = BASE_DIR / "assets" / "style.css"
 if _CSS.exists():
     st.markdown(f"<style>{_CSS.read_text()}</style>", unsafe_allow_html=True)
 
@@ -37,13 +41,32 @@ if _CSS.exists():
 # HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 
-@st.cache_data(show_spinner=False)
 def load_csv(path):
+    """Load CSV robustly — no caching, handles extra columns, None keys, list values."""
+    p = Path(path)
+    if not p.exists():
+        alt = BASE_DIR / "data" / p.name
+        if alt.exists():
+            p = alt
+        else:
+            st.warning(f"⚠️ Data file not found: `{path}`")
+            return []
     try:
-        with open(path, newline="", encoding="utf-8") as f:
-            return [{k: (v or "").strip() for k, v in row.items()}
-                    for row in csv.DictReader(f)]
-    except Exception:
+        rows = []
+        with open(p, newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                clean = {}
+                for k, v in row.items():
+                    if k is None:          # skip phantom overflow columns
+                        continue
+                    if isinstance(v, list):
+                        v = ", ".join(str(i) for i in v)
+                    clean[k] = str(v).strip() if v is not None else ""
+                rows.append(clean)
+        return rows
+    except Exception as e:
+        st.error(f"Error reading `{Path(path).name}`: {e}")
         return []
 
 
@@ -369,7 +392,7 @@ PAGES = {
 
 def render_sidebar():
     with st.sidebar:
-        logo = Path("assets/sidebar_logo.png")
+        logo = BASE_DIR / "assets" / "sidebar_logo.png"
         if logo.exists():
             st.image(str(logo), use_container_width=True)
         st.markdown(f"### {APP_TITLE}")
@@ -495,7 +518,7 @@ def page_use_cases():
                 st.info(f"💬 **Discussion:** {uc['discussion_question']}")
                 prompt_box(uc["sample_prompt"],f"Use Case — {uc['title']}")
     with tab2:
-        csv_ucs = load_csv("data/use_cases.csv")
+        csv_ucs = load_csv(str(BASE_DIR / "data" / "use_cases.csv"))
         if csv_ucs:
             dom_list = sorted({r.get("domain","") for r in csv_ucs})
             for d in dom_list:
@@ -586,9 +609,9 @@ def page_prompt_builder():
 
 def page_nudges():
     st.title("📌 Prewritten Nudges Lab")
-    nudges=load_csv("data/nudges.csv")
+    nudges=load_csv(str(BASE_DIR / "data" / "nudges.csv"))
     if not nudges:
-        st.error("nudges.csv not found."); return
+        st.error(f"nudges.csv not found at: {BASE_DIR / 'data' / 'nudges.csv'}"); return
     cats=sorted({n["category"] for n in nudges})
     cat=sel_blank("Category",cats,key="ncat")
     filt=nudges if cat=="— select —" else [n for n in nudges if n["category"]==cat]
@@ -694,9 +717,15 @@ def page_doc_lab():
 
 def page_activity():
     st.title("🎯 Activity Studio")
-    acts=load_csv("data/classroom_activities.csv")
+    _csv_path = BASE_DIR / "data" / "classroom_activities.csv"
+    if st.session_state.get("instructor_view"):
+        st.caption(f"📂 Looking for: `{_csv_path}` — exists: `{_csv_path.exists()}`")
+    acts=load_csv(str(_csv_path))
     if not acts:
-        st.warning("classroom_activities.csv not found."); return
+        st.error(f"Could not load `classroom_activities.csv`.")
+        st.code(f"Expected path: {_csv_path}\nFile exists: {_csv_path.exists()}\n\ndata/ folder contents:\n" +
+                "\n".join(str(f.name) for f in (BASE_DIR / "data").iterdir()) if (BASE_DIR / "data").exists() else "data/ folder not found")
+        return
     titles=[a.get("title",f"Activity {i+1}") for i,a in enumerate(acts)]
     ch=sel_blank("Choose an activity",titles,key="act_ch")
     if ch=="— select —":
@@ -727,9 +756,9 @@ def page_activity():
 
 def page_prompt_lib():
     st.title("📚 Prompt Library")
-    prompts=load_csv("data/prompt_library.csv")
+    prompts=load_csv(str(BASE_DIR / "data" / "prompt_library.csv"))
     if not prompts:
-        st.warning("prompt_library.csv not found."); return
+        st.warning(f"prompt_library.csv not found at: {BASE_DIR / 'data' / 'prompt_library.csv'}"); return
     cats=sorted({p.get("category","") for p in prompts})
     risks=sorted({p.get("risk_level","") for p in prompts})
     c1,c2=st.columns(2)
@@ -781,7 +810,7 @@ def page_responsible():
     st.title("🔒 Responsible AI & Risk Classifier")
     tab1,tab2,tab3=st.tabs(["📋 Core Principles","🔍 Risk Classifier","🏛️ Governance"])
     with tab1:
-        rules=load_csv("data/responsible_ai_rules.csv")
+        rules=load_csv(str(BASE_DIR / "data" / "responsible_ai_rules.csv"))
         if rules:
             for r in rules:
                 rc={"Low":"#065F46","Medium":"#92400E","High":"#991B1B"}.get(r.get("classification",""),"#374151")
@@ -835,9 +864,9 @@ def page_responsible():
 
 def page_caselets():
     st.title("📋 Caselet Simulator")
-    caselets=load_csv("data/caselets.csv")
+    caselets=load_csv(str(BASE_DIR / "data" / "caselets.csv"))
     if not caselets:
-        st.warning("caselets.csv not found."); return
+        st.warning(f"caselets.csv not found at: {BASE_DIR / 'data' / 'caselets.csv'}"); return
     titles=[c.get("title",f"Caselet {i+1}") for i,c in enumerate(caselets)]
     ch=sel_blank("Choose a caselet",titles,key="cc")
     if ch=="— select —":
@@ -940,9 +969,9 @@ def page_readiness():
 
 def page_quiz():
     st.title("❓ Quiz & Reflection")
-    qs=load_csv("data/quiz_questions.csv")
+    qs=load_csv(str(BASE_DIR / "data" / "quiz_questions.csv"))
     if not qs:
-        st.warning("quiz_questions.csv not found."); return
+        st.warning(f"quiz_questions.csv not found at: {BASE_DIR / 'data' / 'quiz_questions.csv'}"); return
     diffs=sorted({q.get("difficulty","") for q in qs})
     themes=sorted({q.get("theme","") for q in qs})
     c1,c2,c3=st.columns(3)
@@ -1001,7 +1030,7 @@ def page_resources():
     st.title("📦 Resource Hub")
     tab1,tab2,tab3=st.tabs(["📋 Templates","🆓 Free Tools Guide","⬇ Bulk Download"])
     with tab1:
-        tmpls=load_csv("data/resource_templates.csv")
+        tmpls=load_csv(str(BASE_DIR / "data" / "resource_templates.csv"))
         if not tmpls:
             st.warning("resource_templates.csv not found.")
         else:
@@ -1015,7 +1044,7 @@ def page_resources():
         st.markdown(FREE_TOOLS_MD)
         st.download_button("⬇ Download Guide",FREE_TOOLS_MD,"free_ai_tools_guide.md","text/markdown",use_container_width=True)
     with tab3:
-        all_t=load_csv("data/resource_templates.csv") or []
+        all_t=load_csv(str(BASE_DIR / "data" / "resource_templates.csv")) or []
         sep="\n\n"+"="*60+"\n\n"
         combined=sep.join(f"# {t.get('title','')}\n{t.get('description','')}\n\n{t.get('content','')}" for t in all_t)+sep+FREE_TOOLS_MD
         st.download_button("⬇ Download All Resources",combined,"genai_resources.txt","text/plain",use_container_width=True)
