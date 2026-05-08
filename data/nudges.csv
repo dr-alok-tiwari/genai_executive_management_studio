@@ -1,0 +1,64 @@
+category,nudge,when_to_use
+Summarisation,Summarise in 150 words.,When you need a concise executive-level overview from a longer text.
+Summarisation,Extract key decisions.,When a document or discussion contains multiple decision points that need to be surfaced.
+Summarisation,Identify action points.,When turning meeting notes or reports into a clear list of next steps.
+Summarisation,Convert into an executive brief.,When you need a leadership-ready summary from raw administrative notes.
+Summarisation,Highlight what needs verification.,When AI output may contain unsupported claims that require source checking.
+Summarisation,Prepare a one-paragraph summary.,When a concise snapshot is needed for a senior manager with limited time.
+Summarisation,Extract the top three takeaways.,When you want a quick-read distillation of a longer report or analysis.
+Analysis,Identify patterns and implications.,When reviewing data or observations to surface management insights.
+Analysis,Separate facts from assumptions.,When ensuring that analysis is grounded in evidence rather than speculation.
+Analysis,List missing information.,When identifying gaps before submitting a report or brief for review.
+Analysis,Explain managerial relevance.,When technical content needs to be reframed for non-technical leadership.
+Analysis,Create an evidence-based interpretation.,When translating raw observations into a supportable management conclusion.
+Analysis,Compare two options systematically.,When a decision memo requires a structured side-by-side evaluation.
+Analysis,Identify root causes.,When a problem needs to be diagnosed rather than merely described.
+Risk,Identify top five risks.,When preparing a risk summary for leadership review.
+Risk,Classify risks by likelihood and impact.,When building a risk matrix for decision support.
+Risk,Suggest mitigation actions.,When a risk register needs to be actionable rather than descriptive.
+Risk,Create a risk-control matrix.,When formalising risk management for a project or initiative.
+Risk,Flag sensitive information.,When reviewing a document for content that should not be shared externally.
+Risk,Add ethical safeguards.,When an AI use case needs responsible-use constraints built in.
+Risk,Identify human oversight requirements.,When determining which AI outputs require mandatory review before use.
+Decision-Making,Compare alternatives.,When evaluating two or more options using defined criteria.
+Decision-Making,Recommend the best option.,When leadership needs a clear recommendation rather than a list of choices.
+Decision-Making,Show pros and cons.,When a quick structured view of trade-offs is needed.
+Decision-Making,Identify implementation challenges.,When a decision has practical obstacles that should be planned for.
+Decision-Making,Prepare a decision memo.,When formalising options and a recommendation for a senior decision-maker.
+Decision-Making,Create a decision matrix.,When multiple criteria need to be scored across different options.
+Decision-Making,Identify stakeholder concerns.,When assessing how a decision may be received by different groups.
+Communication,Make tone formal.,When a draft needs to be elevated to executive-level language.
+Communication,Make tone polite but firm.,When the message needs to be respectful while communicating a clear requirement.
+Communication,Draft a stakeholder email.,When communicating an update or decision to an internal or external audience.
+Communication,Convert into an announcement.,When a decision needs to be communicated broadly across a team or organisation.
+Communication,Make it suitable for senior leadership.,When an existing draft needs to be refined for a more senior audience.
+Communication,Simplify for a non-technical audience.,When technical findings need to be communicated to professionals without specialist background.
+Communication,Write an executive summary for this document.,When a long report needs a concise leadership-facing opening.
+Presentation,Create a five-slide outline.,When converting a brief or analysis into a structured presentation.
+Presentation,Suggest slide titles.,When building a presentation flow before writing content.
+Presentation,Suggest visuals for each slide.,When a presentation needs charts or diagrams to support its narrative.
+Presentation,Convert bullets into speaker notes.,When preparing a presenter's guide from slide content.
+Presentation,Prepare a closing takeaway slide.,When the final slide should leave the audience with a clear message.
+Presentation,Convert this into a presentation outline.,When a document or analysis needs to be restructured for a slide format.
+Policy Review,Explain policy in simple language.,When a complex policy text needs to be made accessible to managers.
+Policy Review,Identify obligations and compliance points.,When a policy document needs to be translated into action requirements.
+Policy Review,Flag areas requiring official clarification.,When a policy text contains ambiguous wording that needs expert interpretation.
+Policy Review,Create a policy implementation checklist.,When translating policy intent into a step-by-step compliance guide.
+Policy Review,Summarise key policy changes.,When a new or revised policy needs to be communicated efficiently.
+Training Design,Create learning outcomes.,When designing a training session that needs clear measurable goals.
+Training Design,Create a ninety-minute session plan.,When planning a structured professional development workshop.
+Training Design,Suggest learner activities.,When a session needs interactive elements to maintain engagement.
+Training Design,Create assessment questions.,When a training module needs formative or summative evaluation items.
+Training Design,Design a pre-session reflection prompt.,When preparing learners to engage with upcoming content.
+Financial Review,Identify unusual budget patterns.,When reviewing financial data for anomalies that warrant further investigation.
+Financial Review,Generate questions for finance review.,When preparing for a budget review meeting with specific lines to probe.
+Financial Review,Explain budget implications simply.,When financial data needs to be communicated to a non-finance audience.
+Financial Review,Create a financial risk note.,When documenting budget-related risks for governance or oversight purposes.
+Reflection,Ask three reflective questions.,When closing a session and prompting personal application of learning.
+Reflection,Identify leadership lessons.,When extracting management insights from a caselet or case study.
+Reflection,Convert learning into action points.,When translating session insights into a concrete personal implementation plan.
+Reflection,Create a thirty-day implementation plan.,When helping a learner translate new knowledge into post-session action.
+Responsible Use,Add a verification checklist.,When an AI output needs a human review guide before it is used officially.
+Responsible Use,Include a data sensitivity warning.,When a prompt or output may involve information that should be handled carefully.
+Responsible Use,Classify this use case as allowed or restricted.,When determining whether an AI task is appropriate before proceeding.
+Responsible Use,Recommend safer prompt alternatives.,When an existing prompt has risks that can be reduced through reformulation.

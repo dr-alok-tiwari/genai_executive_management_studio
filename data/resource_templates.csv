@@ -1,0 +1,216 @@
+template_id,title,category,description,content
+1,Executive Brief Template,Document Templates,Standard structure for a leadership-ready brief,"EXECUTIVE BRIEF
+
+Date: [Date]
+Prepared by: [Name / Role]
+Subject: [Topic]
+Classification: [e.g. Internal Use Only]
+
+1. BACKGROUND
+[2-3 sentences on context and why this brief is needed]
+
+2. CURRENT SITUATION
+[Key observations, data points, and status update]
+
+3. DECISION POINTS
+[What needs to be decided or approved]
+
+4. RISKS AND CONSIDERATIONS
+[Key risks, constraints, and factors leadership should be aware of]
+
+5. OPTIONS
+Option A: [Brief description, pros, cons]
+Option B: [Brief description, pros, cons]
+
+6. RECOMMENDATION
+[Preferred option and rationale]
+
+7. NEXT STEPS
+[Action items with owner and deadline]
+
+REVIEWER: [Name]       DATE: [Date]
+NOTE: If AI-assisted, verify all facts, figures, and claims before circulation."
+2,Risk Register Template,Document Templates,Standard risk management table,"RISK REGISTER
+
+Project / Programme: [Name]
+Prepared by: [Name]       Date: [Date]
+
+| Risk Description | Likelihood (H/M/L) | Impact (H/M/L) | Mitigation Action | Owner | Review Date |
+|---|---|---|---|---|---|
+| [Risk 1] | [H/M/L] | [H/M/L] | [Action] | [Name] | [Date] |
+| [Risk 2] | [H/M/L] | [H/M/L] | [Action] | [Name] | [Date] |
+| [Risk 3] | [H/M/L] | [H/M/L] | [Action] | [Name] | [Date] |
+
+REVIEWER SIGNATURE: _______________       DATE: _______________
+NOTE: Human expert must validate all risk ratings before this register is used for official decisions."
+3,Meeting Minutes Template,Document Templates,Formal meeting record structure,"MEETING MINUTES
+
+Meeting: [Name / Purpose]
+Date: [Date]       Time: [Start - End]       Location / Platform: [Details]
+Chair: [Name]       Minutes prepared by: [Name]
+
+ATTENDEES
+[List names and roles]
+
+AGENDA ITEMS DISCUSSED
+1. [Item 1]: [Summary of discussion]
+2. [Item 2]: [Summary of discussion]
+3. [Item 3]: [Summary of discussion]
+
+DECISIONS TAKEN
+1. [Decision 1] — agreed by [name(s)]
+2. [Decision 2] — agreed by [name(s)]
+
+ACTION ITEMS
+| Action | Owner | Deadline | Status |
+|---|---|---|---|
+| [Action 1] | [Name] | [Date] | Pending |
+
+PENDING / DEFERRED ITEMS
+[Items not resolved that need follow-up]
+
+NEXT MEETING: [Date, Time, Platform]
+
+APPROVED BY: _______________       DATE: _______________
+NOTE: If AI-assisted, chair must confirm decisions and actions are accurate before circulation."
+4,Responsible AI Checklist,Governance Templates,Pre-use and post-use AI governance checklist,"RESPONSIBLE AI USE CHECKLIST
+
+BEFORE USE
+[ ] The task is clearly defined and the AI tool is appropriate for it
+[ ] Only dummy, public, or approved data is being used
+[ ] No personal, confidential, classified, or restricted information is included
+[ ] The level of sensitivity of the task has been assessed (Low / Medium / High)
+[ ] The appropriate free/approved tool has been selected
+
+DURING USE
+[ ] The prompt includes a constraint against inventing facts
+[ ] The output format is specified in the prompt
+[ ] A role and context have been provided
+[ ] The prompt avoids sensitive names, data, or operational details
+
+AFTER USE
+[ ] All factual claims in the output have been verified
+[ ] The output has been reviewed by a qualified person
+[ ] Any invented or uncertain content has been removed or flagged
+[ ] The output is appropriate for the intended audience
+[ ] The reviewer is named and the review is documented
+[ ] Any official use of the output has been authorised
+
+CLASSIFICATION: Low Risk [ ] / Medium Risk [ ] / High Risk [ ]
+Reviewed by: _______________       Date: _______________"
+5,Prompt Quality Rubric,Assessment Tools,Criteria for evaluating prompt quality,"PROMPT QUALITY RUBRIC
+
+Prompt being evaluated: [Insert prompt]
+
+EVALUATION CRITERIA
+
+1. ROLE (0-1)
+Score 1 if a clear professional role is specified (e.g. 'Act as an executive assistant')
+Score 0 if no role is provided
+Score: ___
+
+2. CONTEXT (0-1)
+Score 1 if relevant background information is included
+Score 0 if context is absent or vague
+Score: ___
+
+3. TASK (0-1)
+Score 1 if the task is specific and actionable
+Score 0 if the task is vague (e.g. 'Help me with this')
+Score: ___
+
+4. OUTPUT FORMAT (0-1)
+Score 1 if the desired output format is specified (e.g. table, bullet list, memo)
+Score 0 if no format is stated
+Score: ___
+
+5. CONSTRAINTS (0-1)
+Score 1 if constraints are included (e.g. 'Do not invent facts', 'Use only the supplied text')
+Score 0 if no constraints are specified
+Score: ___
+
+6. EVALUATION CRITERIA (0-1)
+Score 1 if quality standards or success criteria are mentioned
+Score 0 if none are provided
+Score: ___
+
+TOTAL SCORE: ___ / 6
+INTERPRETATION: 6 = Excellent | 4-5 = Good | 2-3 = Needs Improvement | 0-1 = Rebuild
+NOTES: _______________"
+6,AI Adoption Readiness Checklist,Governance Templates,Organisational readiness assessment for AI adoption,"AI ADOPTION READINESS CHECKLIST
+
+STRATEGIC ALIGNMENT
+[ ] AI use cases are aligned with organisational priorities
+[ ] Leadership has been briefed on AI plans
+[ ] A clear purpose and success definition exists for each use case
+
+DATA GOVERNANCE
+[ ] Permitted and prohibited data types are defined
+[ ] A data classification framework is in place
+[ ] Staff understand what must not be uploaded to external tools
+
+PEOPLE AND SKILLS
+[ ] Key users have received basic AI literacy training
+[ ] Prompt-writing guidance has been provided
+[ ] A point of contact for AI questions is identified
+
+PROCESS SAFEGUARDS
+[ ] A human review step is built into all AI-assisted workflows
+[ ] Approval authority for AI-assisted documents is defined
+[ ] An audit trail process is established
+
+GOVERNANCE AND OVERSIGHT
+[ ] An approved use-case list exists (Allowed / Restricted / Prohibited)
+[ ] A periodic review of AI use is scheduled
+[ ] An escalation pathway is in place for misuse or error
+
+READINESS SCORE: ___ / 20 items ticked
+ASSESSMENT DATE: _______________       ASSESSED BY: _______________"
+7,Stakeholder Communication Template,Document Templates,Standard structure for stakeholder messaging,"STAKEHOLDER COMMUNICATION
+
+Date: [Date]
+From: [Name / Role]
+To: [Stakeholder group]
+Subject: [Topic]
+
+1. CONTEXT
+[Why this communication is being sent and what it relates to]
+
+2. KEY MESSAGE
+[The main point the recipient needs to understand]
+
+3. ACTION REQUIRED
+[What the recipient needs to do, if anything]
+
+4. TIMELINE
+[Key dates or deadlines]
+
+5. RISKS / CONCERNS ACKNOWLEDGED
+[Any concerns the audience is likely to have, and how they are being addressed]
+
+6. CONTACT FOR QUERIES
+[Name, role, and preferred contact method]
+
+NOTE: If AI-assisted, review tone, accuracy, and authority level before sending. Confirm that all factual details are correct and that the message is authorised for circulation."
+8,Decision Matrix Template,Document Templates,Structured framework for comparing decision options,"DECISION MATRIX
+
+Decision to be made: [Description]
+Prepared by: [Name]       Date: [Date]
+
+EVALUATION CRITERIA (weight each criterion 1-3: 3 = most important)
+
+| Criterion | Weight | Option A | Option B | Option C |
+|---|---|---|---|---|
+| Cost effectiveness | [W] | [Score 1-5] | [Score 1-5] | [Score 1-5] |
+| Feasibility | [W] | [Score 1-5] | [Score 1-5] | [Score 1-5] |
+| Time to implement | [W] | [Score 1-5] | [Score 1-5] | [Score 1-5] |
+| Risk level | [W] | [Score 1-5] | [Score 1-5] | [Score 1-5] |
+| Stakeholder support | [W] | [Score 1-5] | [Score 1-5] | [Score 1-5] |
+| Long-term value | [W] | [Score 1-5] | [Score 1-5] | [Score 1-5] |
+| WEIGHTED TOTAL | | [Calc] | [Calc] | [Calc] |
+
+RECOMMENDATION: [Option with highest weighted score, plus rationale]
+DECISION AUTHORITY: [Name / Role]
+APPROVED: _______________       DATE: _______________
+
+NOTE: Human judgement and contextual knowledge must be applied alongside any quantitative scoring."
