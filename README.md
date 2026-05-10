@@ -137,3 +137,80 @@ For classroom and educational use. Not for commercial redistribution.
 ---
 
 *Built with Streamlit · No external AI API · No paid service · No data transmission*
+
+---
+
+## 🧪 Ready-Made Sample Inputs
+
+This version includes a centralized `sample_inputs.py` file that maps classroom-safe source inputs to:
+
+- inline Executive Use Case Explorer prompts in `app.py`
+- CSV-driven Domain Overview prompts in `data/use_cases.csv`
+- Prompt Library templates in `data/prompt_library.csv`
+
+Each mapped prompt now keeps the original placeholder/base prompt visible, keeps the manual text area available, and adds a **Choose a sample input** dropdown. Selecting a sample fills the editable text area and generates a prompt using the selected source input. If no sample is selected or typed, the original placeholder/base prompt remains unchanged.
+
+To add more samples later, open `sample_inputs.py` and append another dictionary item under the relevant title:
+
+```python
+"Delay Root-Cause Brief": [
+    {
+        "title": "Attached classroom-safe sample",
+        "text": "Existing sample text..."
+    },
+    {
+        "title": "New classroom logistics sample",
+        "text": "Your new synthetic classroom-safe source text..."
+    }
+]
+```
+
+## Activity Studio upgrade
+
+The Activity Studio has been expanded into a classroom-ready interactive module.
+
+### What was added
+
+- Clickable instruction steps for each activity.
+- Large readable buttons with wrapping for projector use.
+- Five teaching modes:
+  - Instructor Demo Mode
+  - Learner Practice Mode
+  - Weak vs Strong Prompt Mode
+  - Group Discussion Mode
+  - Reflection Mode
+- Reveal/hide buttons for:
+  - Strong prompt
+  - Suggested answer
+  - Common mistakes
+  - Teaching notes
+  - Debrief answer
+  - Key takeaway
+- Weak, improved, and strong prompt comparisons.
+- Editable sample input text areas retained for manual typing or pasting.
+- A central `activity_studio_data.py` file for adding or editing activities.
+
+### How to add more activities
+
+Open `activity_studio_data.py` and add a new entry inside the `ACTIVITY_STUDIO` dictionary. Use the existing activity structure as a template. At minimum, include:
+
+- `duration`
+- `activity_type`
+- `mode`
+- `objective`
+- `business_context`
+- `sample_input`
+- `steps`
+- `weak_prompt`
+- `improved_prompt`
+- `strong_prompt`
+- `ideal_output`
+- `common_mistakes`
+- `discussion_questions`
+- `debrief_question`
+- `debrief_answer`
+- `instructor_notes`
+- `key_takeaway`
+- `extension_activity`
+
+Legacy activities from `data/classroom_activities.csv` are still loaded, so existing content is not removed.

@@ -18,6 +18,29 @@ try:
 except ImportError:
     HAS_DOCX = False
 
+try:
+    from sample_inputs import (
+        INLINE_USE_CASE_SAMPLES,
+        CSV_USE_CASE_SAMPLES,
+        PROMPT_LIBRARY_SAMPLES,
+    )
+except ImportError:
+    INLINE_USE_CASE_SAMPLES = {}
+    CSV_USE_CASE_SAMPLES = {}
+    PROMPT_LIBRARY_SAMPLES = {}
+
+try:
+    from activity_studio_data import ACTIVITY_STUDIO, ACTIVITY_MODES
+except ImportError:
+    ACTIVITY_STUDIO = {}
+    ACTIVITY_MODES = [
+        "Instructor Demo Mode",
+        "Learner Practice Mode",
+        "Weak vs Strong Prompt Mode",
+        "Group Discussion Mode",
+        "Reflection Mode",
+    ]
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Anchor all paths to the script's directory so the app runs correctly
 # regardless of which directory Streamlit is launched from.
@@ -129,6 +152,148 @@ def sel_blank(label, opts, **kw):
 
 def radio_blank(label, opts, **kw):
     return st.radio(label, opts, index=None, **kw)
+
+
+def _safe_widget_key(*parts):
+    raw = "::".join(str(p) for p in parts)
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()[:10]
+
+
+def _nonempty_lines(text):
+    return [ln.strip() for ln in str(text or "").splitlines() if ln.strip()]
+
+
+def _trimmed_source(text, max_chars=950, max_lines=12):
+    lines = _nonempty_lines(text)[:max_lines]
+    out = "\n".join(lines)
+    if len(out) > max_chars:
+        out = out[:max_chars].rsplit(" ", 1)[0].rstrip() + "…"
+    return out
+
+
+def _focused_source(text, max_chars=1150):
+    lines = _nonempty_lines(text)
+    keywords = (
+        "target", "concern", "risk", "decision", "need", "required",
+        "impact", "constraint", "objective", "action", "issue", "observation",
+        "delay", "pending", "recommend", "support", "current", "timeline"
+    )
+    picked = [ln for ln in lines if any(k in ln.lower() for k in keywords)]
+    if len(picked) < 5:
+        picked = lines[:10]
+    out = "\n".join(picked[:12])
+    if len(out) > max_chars:
+        out = out[:max_chars].rsplit(" ", 1)[0].rstrip() + "…"
+    return out
+
+
+def _sample_variants(samples):
+    """Return displayed sample options. Adds short variants when only one attached sample exists."""
+    variants = []
+    for item in samples or []:
+        title = item.get("title", "Classroom sample")
+        text = item.get("text", "")
+        if text:
+            variants.append({"title": title, "text": text})
+            if len(samples) == 1:
+                quick = _trimmed_source(text)
+                focus = _focused_source(text)
+                if quick and quick != text:
+                    variants.append({"title": "Quick demo version", "text": quick})
+                if focus and focus not in {text, quick}:
+                    variants.append({"title": "Focused discussion version", "text": focus})
+    return variants
+
+
+def _extract_field(source_text, field_name):
+    pattern = rf"^{re.escape(field_name)}\s*:\s*(.+)$"
+    for line in str(source_text or "").splitlines():
+        m = re.match(pattern, line.strip(), flags=re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
+    return ""
+
+
+def _apply_source_input_to_prompt(prompt, source_text):
+    """Replace bracketed placeholders while preserving the original base prompt when input is empty."""
+    source_text = str(source_text or "").strip()
+    if not source_text:
+        return prompt
+
+    placeholders = re.findall(r"\[([^\]]+)\]", prompt or "")
+    final_prompt = prompt
+    append_source = False
+
+    for ph in placeholders:
+        ph_lower = ph.strip().lower()
+        token = f"[{ph}]"
+        if "topic" in ph_lower:
+            replacement = _extract_field(source_text, "Topic") or "the topic described in the source input below"
+            append_source = True
+        elif "audience" in ph_lower:
+            replacement = _extract_field(source_text, "Audience") or "the audience described in the source input below"
+            append_source = True
+        else:
+            replacement = "the source input below"
+            append_source = True
+        final_prompt = final_prompt.replace(token, replacement)
+
+    if placeholders and append_source:
+        return f"{final_prompt}\n\nSource input:\n{source_text}"
+
+    # For prompts that use phrases such as "the following raw notes" but do not
+    # contain bracketed placeholders, append the chosen/typed source text.
+    return f"{prompt}\n\nSource input:\n{source_text}"
+
+
+def _clear_sample_state(text_key, select_key):
+    st.session_state[text_key] = ""
+    st.session_state[select_key] = "Select a sample..."
+    st.session_state[f"{select_key}_last"] = "Select a sample..."
+
+
+def sample_prompt_workbench(base_prompt, label, samples, key_seed, text_area_label="Source input / editable sample"):
+    """Render sample selector + editable text area + final generated prompt."""
+    options = _sample_variants(samples)
+    select_key = f"sample_select_{_safe_widget_key(key_seed, label)}"
+    text_key = f"sample_text_{_safe_widget_key(label, key_seed)}"
+
+    if text_key not in st.session_state:
+        st.session_state[text_key] = ""
+    if select_key not in st.session_state:
+        st.session_state[select_key] = "Select a sample..."
+
+    if options:
+        st.markdown("**Use a ready-made sample for classroom demonstration**")
+        st.caption("You may edit the sample after inserting it. Manual typing/pasting remains available.")
+        titles = ["Select a sample..."] + [item["title"] for item in options]
+        selected = st.selectbox("Choose a sample input", titles, key=select_key)
+        if st.session_state.get(f"{select_key}_last") != selected:
+            if selected != "Select a sample...":
+                chosen = next((item for item in options if item["title"] == selected), None)
+                if chosen:
+                    st.session_state[text_key] = chosen["text"]
+            st.session_state[f"{select_key}_last"] = selected
+    else:
+        st.info("No ready-made sample is mapped yet. You can still type or paste source text below.")
+
+    source_text = st.text_area(
+        text_area_label,
+        placeholder="Paste your text/report here, or choose a sample above.",
+        height=220,
+        key=text_key,
+    )
+    st.button(
+        "🧹 Clear source input",
+        key=f"clear_{_safe_widget_key(key_seed, label)}",
+        on_click=_clear_sample_state,
+        args=(text_key, select_key),
+        use_container_width=True,
+    )
+    final_prompt = _apply_source_input_to_prompt(base_prompt, source_text)
+    st.markdown("**Generated prompt:**")
+    prompt_box(final_prompt, label)
+    return final_prompt
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -508,7 +673,7 @@ def page_use_cases():
                 with ca:
                     st.markdown(f"**Problem:** {uc['management_problem']}")
                     st.markdown(f"**How GenAI helps:** {uc['how_ai_helps']}")
-                    st.markdown("**Sample Prompt:**")
+                    st.markdown("**Base prompt with placeholder preserved:**")
                     st.code(uc["sample_prompt"],language=None)
                 with cb:
                     st.markdown(f"**Expected Output:** {uc['expected_output']}")
@@ -516,14 +681,43 @@ def page_use_cases():
                     st.markdown(f"**Limitation:** {uc['limitation']}")
                     st.markdown(f"**Human Oversight:** {uc['human_oversight']}")
                 st.info(f"💬 **Discussion:** {uc['discussion_question']}")
-                prompt_box(uc["sample_prompt"],f"Use Case — {uc['title']}")
+                samples = INLINE_USE_CASE_SAMPLES.get(uc["title"], [])
+                sample_prompt_workbench(
+                    uc["sample_prompt"],
+                    f"Use Case — {uc['title']}",
+                    samples,
+                    f"inline_{uc.get('id','')}_{uc['title']}",
+                )
     with tab2:
         csv_ucs = load_csv(str(BASE_DIR / "data" / "use_cases.csv"))
         if csv_ucs:
             dom_list = sorted({r.get("domain","") for r in csv_ucs})
-            for d in dom_list:
-                n = len([r for r in csv_ucs if r.get("domain")==d])
-                st.markdown(f"**{d}** — {n} use case{'s' if n>1 else ''}")
+            dom_filter = sel_blank("Filter CSV use cases by domain", dom_list, key="csv_uc_dom")
+            rows = csv_ucs if dom_filter=="— select —" else [r for r in csv_ucs if r.get("domain")==dom_filter]
+            for r in rows:
+                title = r.get("title", "Untitled use case")
+                rc = {"Low":"#065F46","Medium":"#92400E","High":"#991B1B"}.get(r.get("risk_level",""),"#374151")
+                with st.expander(f"📊 **{r.get('domain','—')}** — {title}"):
+                    c1,c2 = st.columns([2,1])
+                    with c1:
+                        st.markdown(f"**Problem:** {r.get('management_problem','—')}")
+                        st.markdown(f"**How GenAI helps:** {r.get('how_ai_helps','—')}")
+                        st.markdown("**Base prompt:**")
+                        st.code(r.get("sample_prompt","—"), language=None)
+                    with c2:
+                        st.markdown(f"**Expected Output:** {r.get('expected_output','—')}")
+                        st.markdown(f'<span class="badge" style="background:{rc}">Risk: {r.get("risk_level","—")}</span>', unsafe_allow_html=True)
+                        st.markdown(f"**Limitation:** {r.get('limitation','—')}")
+                        st.markdown(f"**Human Oversight:** {r.get('human_oversight','—')}")
+                    if r.get("discussion_question"):
+                        st.info(f"💬 **Discussion:** {r.get('discussion_question')}")
+                    samples = CSV_USE_CASE_SAMPLES.get(title, [])
+                    sample_prompt_workbench(
+                        r.get("sample_prompt", ""),
+                        f"CSV Use Case — {title}",
+                        samples,
+                        f"csv_{r.get('id','')}_{title}",
+                    )
         else:
             empty_st("📂","No CSV data found.")
     ibox("Pick 2–3 use cases relevant to the participants' domain. Have them adapt the sample prompt for a real scenario from their work.")
@@ -715,38 +909,318 @@ def page_doc_lab():
 # PAGE: ACTIVITY STUDIO
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+def _set_session_value(key, value):
+    st.session_state[key] = value
+
+
+def _toggle_session_bool(key):
+    st.session_state[key] = not st.session_state.get(key, False)
+
+
+def _activity_csv_to_rich(row):
+    """Create a rich-compatible activity from legacy CSV rows."""
+    title = row.get("title", "Untitled Activity")
+    instructions = row.get("instructions", "")
+    parts = [p.strip() for p in re.split(r"\s*\d+\.\s*", instructions) if p.strip()]
+    if not parts:
+        parts = [instructions or "Discuss the activity and prepare a response."]
+    steps = []
+    for i, text in enumerate(parts[:4], 1):
+        short = text.rstrip(".")
+        steps.append({
+            "title": f"Step {i}: {short[:42]}",
+            "button_label": f"Step {i}: {short[:42]}",
+            "instructor_action": text,
+            "learner_task": "Discuss the step and capture one practical output.",
+            "facilitator_script": f"Let us focus on this step: {text}",
+            "expected_response": "Learners should produce a specific, management-relevant observation or draft.",
+            "common_mistakes": "Keeping the answer generic or failing to state assumptions clearly.",
+            "teaching_takeaway": "Clear instructions and human review improve AI-assisted outputs.",
+        })
+    return {
+        "duration": f"{row.get('duration_minutes','—')} min",
+        "activity_type": row.get("activity_type", "Activity"),
+        "mode": "Individual",
+        "objective": row.get("objective", "—"),
+        "business_context": "Use this activity to practise converting a management situation into a clearer, safer, and more useful AI-assisted output.",
+        "sample_input": row.get("sample_input", ""),
+        "instructions": instructions,
+        "steps": steps,
+        "weak_prompt": row.get("sample_input", "Summarise this."),
+        "improved_prompt": row.get("ideal_output", "Create a structured response for this management task."),
+        "strong_prompt": row.get("ideal_output", "Create a structured response for this management task."),
+        "why_weak": "The weak version is underspecified and does not control audience, format, or evidence boundaries.",
+        "why_strong": "The strong version gives clearer role, task, output structure, and review expectations.",
+        "expected_output_structure": "Context, key observations, recommended response, assumptions, and human verification points.",
+        "ideal_output": row.get("ideal_output", "—"),
+        "common_mistakes": ["Being too generic", "Inventing details", "Ignoring audience", "Skipping verification"],
+        "discussion_questions": [row.get("debrief_question", "What would require human verification?")],
+        "debrief_question": row.get("debrief_question", "What would require human verification?"),
+        "debrief_answer": "Learners should verify facts, figures, dates, names, assumptions, and any recommendation that affects people, policy, finance, or operations.",
+        "instructor_notes": row.get("facilitation_note", "Use this activity for guided classroom discussion."),
+        "key_takeaway": "AI can improve structure, but human judgement remains responsible for accuracy and appropriateness.",
+        "extension_activity": "Ask learners to improve the prompt using role, context, task, output format, and verification criteria.",
+    }
+
+
+def _activity_markdown_card(title, body, icon="", tone="info"):
+    tone_class = {
+        "info": "info-box",
+        "success": "success-box",
+        "warning": "warning-box",
+        "danger": "danger-box",
+    }.get(tone, "info-box")
+    st.markdown(
+        f'<div class="{tone_class}"><strong>{icon} {title}</strong><br>{body}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _activity_list(items):
+    if isinstance(items, str):
+        items = [items]
+    for item in items or []:
+        st.markdown(f"- {item}")
+
+
+def _reveal_activity_section(label, key, content, *, as_code=False, tone=None):
+    btn_label = f"🙈 Hide {label}" if st.session_state.get(key, False) else f"👁️ Reveal {label}"
+    st.button(btn_label, key=f"btn_{key}", on_click=_toggle_session_bool, args=(key,), use_container_width=True)
+    if st.session_state.get(key, False):
+        if as_code:
+            st.code(content or "—", language=None)
+        elif isinstance(content, list):
+            if tone:
+                _activity_markdown_card(label, "<br>".join(f"• {x}" for x in content), tone=tone)
+            else:
+                _activity_list(content)
+        else:
+            if tone:
+                _activity_markdown_card(label, content or "—", tone=tone)
+            else:
+                st.markdown(content or "—")
+
+
+def _render_step_detail(step, key_prefix):
+    st.markdown(f"### {step.get('title','Selected Step')}")
+    c1, c2 = st.columns(2)
+    with c1:
+        _activity_markdown_card("Instructor should do", step.get("instructor_action", "—"), "🎓", "info")
+        _activity_markdown_card("Suggested facilitator script", step.get("facilitator_script", "—"), "🗣️", "warning")
+    with c2:
+        _activity_markdown_card("Learners should discuss", step.get("learner_task", "—"), "👥", "success")
+        _activity_markdown_card("Expected learner response", step.get("expected_response", "—"), "✅", "info")
+    c3, c4 = st.columns(2)
+    with c3:
+        _reveal_activity_section("Common Mistakes", f"{key_prefix}_step_mistakes", step.get("common_mistakes", "—"), tone="danger")
+    with c4:
+        _reveal_activity_section("Teaching Takeaway", f"{key_prefix}_step_takeaway", step.get("teaching_takeaway", "—"), tone="success")
+
+
+def _render_prompt_comparison(act, key_prefix):
+    st.markdown("### ⚖️ Weak vs Strong Prompt Comparison")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("#### ❌ Weak Prompt")
+        st.markdown(f'<div class="prompt-display">{act.get("weak_prompt","—")}</div>', unsafe_allow_html=True)
+        _reveal_activity_section("Why This Is Weak", f"{key_prefix}_why_weak", act.get("why_weak", "—"), tone="danger")
+    with c2:
+        st.markdown("#### ✅ Strong Prompt")
+        st.markdown(f'<div class="prompt-display">{act.get("strong_prompt","—")}</div>', unsafe_allow_html=True)
+        _reveal_activity_section("Why This Is Strong", f"{key_prefix}_why_strong", act.get("why_strong", "—"), tone="success")
+
+    with st.expander("🟡 Improved Prompt: useful middle version", expanded=False):
+        st.markdown(f'<div class="prompt-display">{act.get("improved_prompt","—")}</div>', unsafe_allow_html=True)
+
+    c3, c4 = st.columns(2)
+    with c3:
+        _reveal_activity_section("Expected Output Quality Difference", f"{key_prefix}_output_quality", act.get("expected_output_structure", "—"), tone="info")
+    with c4:
+        _reveal_activity_section("Improvement Tips", f"{key_prefix}_improvement_tips", [
+            "Specify the role and audience.",
+            "Tell the AI exactly what output structure you want.",
+            "Add factual boundaries such as 'do not invent data'.",
+            "Ask the AI to mark assumptions and verification needs.",
+        ], tone="warning")
+
+
+def _render_activity_modes(act, mode, key_prefix):
+    if mode == "Instructor Demo Mode":
+        st.markdown("### 🎬 Instructor Demo Flow")
+        _activity_markdown_card("How to run this activity", act.get("instructions", "—"), "📋", "info")
+        _activity_markdown_card("Instructor notes", act.get("instructor_notes", "—"), "🎓", "warning")
+        _reveal_activity_section("Model Answer / Ideal Output", f"{key_prefix}_demo_ideal", act.get("ideal_output", "—"), tone="success")
+        _reveal_activity_section("Common Learner Mistakes", f"{key_prefix}_demo_mistakes", act.get("common_mistakes", []), tone="danger")
+
+    elif mode == "Learner Practice Mode":
+        st.markdown("### ✍️ Learner Practice Mode")
+        _activity_markdown_card("Learner task", "Use the sample input or your edited version below. Build a better prompt, then compare it with the strong prompt only after discussion.", "🧑‍🎓", "info")
+        learner_prompt = st.text_area(
+            "Learner prompt draft",
+            placeholder="Write your improved prompt here...",
+            height=140,
+            key=f"learner_prompt_{key_prefix}",
+        )
+        if learner_prompt:
+            st.download_button("⬇ Download learner prompt", learner_prompt, "learner_prompt.txt", use_container_width=True, key=f"dl_learner_{key_prefix}")
+        _reveal_activity_section("Strong Prompt", f"{key_prefix}_practice_strong", act.get("strong_prompt", "—"), as_code=True, tone=None)
+        _reveal_activity_section("Suggested Answer", f"{key_prefix}_practice_answer", act.get("ideal_output", "—"), tone="success")
+
+    elif mode == "Weak vs Strong Prompt Mode":
+        _render_prompt_comparison(act, key_prefix)
+
+    elif mode == "Group Discussion Mode":
+        st.markdown("### 👥 Group Discussion Mode")
+        _activity_markdown_card("Group task", "Discuss the questions below. One member should capture the group's answer and one practical improvement to the prompt.", "👥", "info")
+        for i, q in enumerate(act.get("discussion_questions", []) or [], 1):
+            st.markdown(f"**Q{i}. {q}**")
+            st.text_area("Group notes", key=f"group_{key_prefix}_{i}", height=80, label_visibility="collapsed")
+        _reveal_activity_section("Expected Discussion Points", f"{key_prefix}_group_expected", act.get("debrief_answer", "—"), tone="success")
+
+    elif mode == "Reflection Mode":
+        st.markdown("### 💬 Reflection Mode")
+        _activity_markdown_card("Debrief question", act.get("debrief_question", "—"), "💬", "info")
+        reflection = st.text_area("Participant reflection", placeholder="Write your reflection here...", height=120, key=f"reflect_{key_prefix}")
+        if reflection:
+            st.download_button("⬇ Download reflection", reflection, "activity_reflection.txt", use_container_width=True, key=f"dl_reflect_{key_prefix}")
+        _reveal_activity_section("Suggested Debrief Answer", f"{key_prefix}_reflect_answer", act.get("debrief_answer", "—"), tone="success")
+        _reveal_activity_section("Key Takeaway", f"{key_prefix}_reflect_takeaway", act.get("key_takeaway", "—"), tone="warning")
+        _reveal_activity_section("Optional Extension Activity", f"{key_prefix}_reflect_extension", act.get("extension_activity", "—"), tone="info")
+
+
 def page_activity():
     st.title("🎯 Activity Studio")
     _csv_path = BASE_DIR / "data" / "classroom_activities.csv"
     if st.session_state.get("instructor_view"):
         st.caption(f"📂 Looking for: `{_csv_path}` — exists: `{_csv_path.exists()}`")
-    acts=load_csv(str(_csv_path))
-    if not acts:
-        st.error(f"Could not load `classroom_activities.csv`.")
-        st.code(f"Expected path: {_csv_path}\nFile exists: {_csv_path.exists()}\n\ndata/ folder contents:\n" +
-                "\n".join(str(f.name) for f in (BASE_DIR / "data").iterdir()) if (BASE_DIR / "data").exists() else "data/ folder not found")
+
+    legacy_rows = load_csv(str(_csv_path))
+    activity_map = {}
+    for row in legacy_rows:
+        title = row.get("title", f"Activity {len(activity_map)+1}")
+        activity_map[title] = _activity_csv_to_rich(row)
+    activity_map.update(ACTIVITY_STUDIO)
+
+    if not activity_map:
+        st.error("Could not load activities.")
         return
-    titles=[a.get("title",f"Activity {i+1}") for i,a in enumerate(acts)]
-    ch=sel_blank("Choose an activity",titles,key="act_ch")
-    if ch=="— select —":
-        empty_st("🎯","Select an activity above."); footer(); return
-    act=next(a for a in acts if a.get("title")==ch)
-    c1,c2,c3=st.columns(3)
-    with c1: st.markdown(f'<div class="metric-card"><div class="metric-value">⏱ {act.get("duration_minutes","—")} min</div><div class="metric-label">Duration</div></div>',unsafe_allow_html=True)
-    with c2: st.markdown(f'<div class="metric-card"><div class="metric-value">🎯 {act.get("activity_type","—")}</div><div class="metric-label">Type</div></div>',unsafe_allow_html=True)
-    with c3: st.markdown(f'<div class="metric-card"><div class="metric-value">👤 Individual</div><div class="metric-label">Mode</div></div>',unsafe_allow_html=True)
+
+    titles = list(activity_map.keys())
+    ch = sel_blank("Choose an activity", titles, key="act_ch")
+    if ch == "— select —":
+        empty_st("🎯", "Select an activity above.")
+        footer()
+        return
+
+    act = activity_map[ch]
+    key_prefix = _safe_widget_key("activity", ch)
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f'<div class="metric-card"><div class="metric-value">⏱ {act.get("duration","—")}</div><div class="metric-label">Duration</div></div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown(f'<div class="metric-card"><div class="metric-value">🎯 {act.get("activity_type","—")}</div><div class="metric-label">Type</div></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown(f'<div class="metric-card"><div class="metric-value">👤 {act.get("mode","—")}</div><div class="metric-label">Mode</div></div>', unsafe_allow_html=True)
+
     st.markdown(f"**Objective:** {act.get('objective','—')}")
+    _activity_markdown_card("Business context", act.get("business_context", "—"), "🏢", "info")
+
+    # Editable source input remains available while built-in sample is visible.
+    sample_key = f"activity_sample_{key_prefix}"
+    if sample_key not in st.session_state:
+        st.session_state[sample_key] = act.get("sample_input", "")
+
+    st.markdown("### 📝 Sample Input / Editable Source Text")
+    c_sample_1, c_sample_2 = st.columns([1, 1])
+    with c_sample_1:
+        st.button(
+            "📝 Use built-in sample input",
+            key=f"use_sample_{key_prefix}",
+            on_click=_set_session_value,
+            args=(sample_key, act.get("sample_input", "")),
+            use_container_width=True,
+        )
+    with c_sample_2:
+        st.button(
+            "🧹 Clear editable input",
+            key=f"clear_sample_{key_prefix}",
+            on_click=_set_session_value,
+            args=(sample_key, ""),
+            use_container_width=True,
+        )
+    current_input = st.text_area(
+        "Editable activity input",
+        placeholder="Paste your text/report here or use the built-in sample input.",
+        height=150,
+        key=sample_key,
+    )
+
     st.markdown("---")
-    with st.expander("📋 Instructions",expanded=True): st.markdown(act.get("instructions","—"))
-    with st.expander("📝 Sample Input"): st.code(act.get("sample_input","—"),language=None)
-    with st.expander("✅ Ideal Output"): st.markdown(act.get("ideal_output","—"))
-    st.info(f"💬 **Debrief:** {act.get('debrief_question','—')}")
-    if st.session_state.get("instructor_view"):
-        st.markdown(f'<div class="instructor-note">🎓 <strong>Facilitation Note:</strong> {act.get("facilitation_note","—")}</div>',unsafe_allow_html=True)
+    st.markdown("### 🧭 Select Teaching Mode")
+    mode_key = f"activity_mode_{key_prefix}"
+    if mode_key not in st.session_state:
+        st.session_state[mode_key] = "Instructor Demo Mode"
+    mode_cols = st.columns(len(ACTIVITY_MODES))
+    mode_icons = ["🎬", "✍️", "⚖️", "👥", "💬"]
+    for idx, mode_name in enumerate(ACTIVITY_MODES):
+        with mode_cols[idx]:
+            selected_marker = "✅ " if st.session_state[mode_key] == mode_name else ""
+            st.button(
+                f"{selected_marker}{mode_icons[idx]} {mode_name}",
+                key=f"mode_btn_{key_prefix}_{idx}",
+                on_click=_set_session_value,
+                args=(mode_key, mode_name),
+                use_container_width=True,
+            )
+    selected_mode = st.session_state[mode_key]
+    st.caption(f"Current mode: {selected_mode}")
+
+    st.markdown("### 🪜 Clickable Instruction Steps")
+    steps = act.get("steps", []) or []
+    step_key = f"activity_step_{key_prefix}"
+    if step_key not in st.session_state:
+        st.session_state[step_key] = 0
+    for row_start in range(0, len(steps), 4):
+        cols = st.columns(min(4, len(steps) - row_start))
+        for offset, step in enumerate(steps[row_start:row_start+4]):
+            idx = row_start + offset
+            with cols[offset]:
+                marker = "✅ " if st.session_state[step_key] == idx else ""
+                st.button(
+                    f"{marker}{step.get('button_label', f'Step {idx+1}')}",
+                    key=f"step_btn_{key_prefix}_{idx}",
+                    on_click=_set_session_value,
+                    args=(step_key, idx),
+                    use_container_width=True,
+                )
+    if steps:
+        _render_step_detail(steps[st.session_state[step_key]], f"{key_prefix}_{st.session_state[step_key]}")
+
+    st.markdown("---")
+    _render_activity_modes(act, selected_mode, key_prefix)
+
+    st.markdown("---")
+    st.markdown("### ✅ Complete Activity Summary")
+    csum1, csum2 = st.columns(2)
+    with csum1:
+        _reveal_activity_section("Expected AI Output Structure", f"{key_prefix}_summary_structure", act.get("expected_output_structure", "—"), tone="info")
+        _reveal_activity_section("Model Answer / Ideal Output", f"{key_prefix}_summary_ideal", act.get("ideal_output", "—"), tone="success")
+    with csum2:
+        _reveal_activity_section("Common Learner Mistakes", f"{key_prefix}_summary_mistakes", act.get("common_mistakes", []), tone="danger")
+        _reveal_activity_section("Debrief Answer", f"{key_prefix}_summary_debrief", act.get("debrief_answer", "—"), tone="warning")
+
     st.markdown("### ✍️ Participant Workspace")
-    resp=st.text_area("Write your response here:",height=140,key=f"aresp_{ch}")
+    resp = st.text_area("Write your response here:", height=140, key=f"aresp_{key_prefix}")
     if resp:
-        st.download_button("⬇ Download Response",resp,f"activity_{ch[:20].replace(' ','_')}.txt",use_container_width=True)
+        st.download_button("⬇ Download Response", resp, f"activity_{ch[:20].replace(' ','_')}.txt", use_container_width=True, key=f"dl_activity_{key_prefix}")
+
+    # Keep current input available for copy/download if the instructor edits it.
+    if current_input:
+        with st.expander("📦 Current editable source input", expanded=False):
+            st.code(current_input, language=None)
+
     footer()
 
 
@@ -770,14 +1244,22 @@ def page_prompt_lib():
     if not filt:
         empty_st("📚","No prompts match the filters."); return
     for p in filt:
+        title = p.get("title", "Untitled prompt")
         rc={"Low":"#065F46","Medium":"#92400E","High":"#991B1B"}.get(p.get("risk_level",""),"#374151")
-        with st.expander(f"📝  {p.get('title','—')}"):
+        with st.expander(f"📝  {title}"):
             st.markdown(f"**Category:** {p.get('category','—')} | **Tool:** {p.get('tool','—')} | **Output:** {p.get('output_type','—')}")
             st.markdown(f'<span class="badge" style="background:{rc}">Risk: {p.get("risk_level","—")}</span>',unsafe_allow_html=True)
+            st.markdown("**Base prompt:**")
             st.code(p.get("prompt","—"),language=None)
             if p.get("warning"):
                 st.markdown(f'<div class="warning-box">⚠️ {p["warning"]}</div>',unsafe_allow_html=True)
-            prompt_box(p.get("prompt",""),f"Library — {p.get('title','')}")
+            samples = PROMPT_LIBRARY_SAMPLES.get(title, [])
+            sample_prompt_workbench(
+                p.get("prompt", ""),
+                f"Library — {title}",
+                samples,
+                f"library_{title}",
+            )
     ibox("Ask participants to select one prompt, adapt it for their domain, and share the adaptation.")
     footer()
 
